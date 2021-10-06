@@ -47,9 +47,14 @@ public class Corrector
             ArrayList<String> resemblingWords = new ArrayList<>();
             Trigram trigrams = new Trigram(this.word);
             correct += " est faux";
-            for (String word : words)
-                if (trigrams.getTrigrams().contains(word))
-                    resemblingWords.add(word);
+            for (String word : this.words){
+                for (String trigram : trigrams.getTrigrams()) {
+                    if (word.contains(trigram)) {
+                        resemblingWords.add(word);
+                    }
+                }
+            }
+            System.out.println(resemblingWords);
         }
         else {
             correct += " est juste";
