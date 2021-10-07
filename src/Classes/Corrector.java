@@ -7,23 +7,19 @@ import java.util.*;
 
 public class Corrector
 {
-    private ArrayList<String> words = new ArrayList<>(); // note : l'usage d'une ArrayList facilite le code, mais rends l'execution beaucoup plus longue.
+    private final ArrayList<String> wordsRef = new ArrayList<>(); // note : l'usage d'une ArrayList facilite le code, mais rends l'execution beaucoup plus longue.
     private String reference;
-    private String word;
+    private final ArrayList<String> entryWords = new ArrayList<>();
 
     public Corrector()
     {
 
     }
 
-    public Corrector(String word)
-    {
-        newWord(word);
-    }
 
-    public Corrector(String word, String path)
+    public Corrector(ArrayList<String> entryWords, String path)
     {
-        newWord(word);
+        getEntryWords(entryWords);
         setReference(path);
     }
 
@@ -32,14 +28,16 @@ public class Corrector
         DataReader();
     }
 
-    public void newWord(String word){
-        this.word = addBrackets(word);
+    public void getEntryWords(ArrayList<String> entryWords){
+        for (String word : entryWords){
+            this.entryWords.add(addBrackets(word));
+        }
     }
 
-    private ArrayList<String> TrigramsOccurence(ArrayList<String> list){
+    private ArrayList<String> TrigramsOccurence(ArrayList<String> list, String providedWord){
         ArrayList<String> result = new ArrayList<>();
-        Trigram trigrams = new Trigram(this.word);
-        for (String word : this.words){
+        Trigram trigrams = new Trigram(providedWord);
+        for (String word : this.wordsRef){
             for (String trigram : trigrams.getTrigrams()) {
                 if (word.contains(trigram)) {
                     result.add(word);
@@ -49,8 +47,8 @@ public class Corrector
         return result;
     }
 
-    private ArrayList<String> TrigramsOccurence(){
-        return TrigramsOccurence(this.words);
+    private ArrayList<String> TrigramsOccurence(String providedWord){
+        return TrigramsOccurence(this.wordsRef, providedWord);
     }
 
     private ArrayList<String> TrigramsSelection(ArrayList<String> list){
@@ -68,18 +66,16 @@ public class Corrector
     }
 
     private ArrayList<String> RemoveDuplicate(ArrayList<String> list) {
-        ArrayList<String> result = new ArrayList<>();
         Set<String> set = new HashSet<>(list); // La collection Set n'accepte pas les doublons
-        result.addAll(set);
-        return result;
+        return new ArrayList<>(set);
     }
 
-    private ArrayList<String> LevenshteinOrder(ArrayList<String> list){
+    private ArrayList<String> LevenshteinOrder(ArrayList<String> list, String providedWord){
         ArrayList<String> result = new ArrayList<>();
         int max = Integer.MAX_VALUE;
 
-        for (String word: list){
-            int distance = Levenshtein.LevenshteinDistance(word, this.word);
+        for (String word : list){
+            int distance = Levenshtein.LevenshteinDistance(word, providedWord);
 
             if (distance < max) {
                 result.add(word);
@@ -90,16 +86,24 @@ public class Corrector
         return result;
     }
 
-    public ArrayList<String> WordProcessing(){
+    public ArrayList<ArrayList<String>> WordsProcessing(){
+        ArrayList<ArrayList<String>> result = new ArrayList<>();
+        for (String word : this.entryWords){
+            result.add(WordProcessing(word));
+        }
+        return result;
+    }
+
+    public ArrayList<String> WordProcessing(String providedWord){
         ArrayList<String> result = new ArrayList<>();
 
         // Verification d'une faute et recherche de mots par trigrammes
-        if (!WordIsCorrect()){
+        if (!WordIsCorrect(providedWord)){
 
-            result = TrigramsOccurence();
+            result = TrigramsOccurence(providedWord);
             result = TrigramsSelection(result);
             result = RemoveDuplicate(result);
-            result = LevenshteinOrder(result);
+            result = LevenshteinOrder(result, providedWord);
 
             for (int i=5 ; i<result.size() ; i++)
                 result.remove(i);
@@ -112,24 +116,26 @@ public class Corrector
         for (String word : result){
             removeBrackets(word);
         }
-        System.out.println(words.size());
 
+        DebugInfos(providedWord, result);
         return result;
     }
 
-    private boolean WordIsCorrect() {
-        return words.contains(word);
+    private void DebugInfos(String providedWord, ArrayList<String> corrections) {
+        System.out.println("faute: " + providedWord);
+        System.out.println("nb de mots en reference: " + wordsRef.size());
+        System.out.println("nb de mots en entrée: " + entryWords.size());
+        System.out.println("correction proposées: " + corrections + "\n");
     }
 
-    public static ArrayList<String> Correction(String word, String path){
-        Corrector corrector = new Corrector(word, path);
-        return corrector.WordProcessing();
+    private boolean WordIsCorrect(String word) {
+        return wordsRef.contains(word);
     }
 
     public void DataReader(){
         try {
             for (String word : Files.readAllLines(Paths.get(this.reference))) {
-                this.words.add(addBrackets(word));
+                this.wordsRef.add(addBrackets(word));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -141,12 +147,15 @@ public class Corrector
     }
 
     private String removeBrackets(String word) {
-        String result = word.replaceAll("<|>", "");
-        return result;
+        return word.replaceAll("[<>]", "");
     }
 
     @Override
     public String toString() {
-        return removeBrackets(this.word);
+        StringBuilder result = new StringBuilder();
+        for (String word : entryWords){
+            result.append(removeBrackets(word)).append("\n");
+        }
+        return result.toString();
     }
 }
