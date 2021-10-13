@@ -29,25 +29,12 @@ public class Main {
         correction.WordsProcessing();
         */
 
-        String fautes = "chatq";
+        // System.out.println(Levenshtein.LevenshteinDistance("logarythmique", "algorithmique"));
 
         Corrector corrector = new Corrector();
         corrector.setReference("/amuhome/l21201049/IdeaProjects/TP2-Correcteur/texts/dico.txt");
-        corrector.WordProcessing(fautes);
 
-        fautes = "anticonstitutionnellement";
-        corrector.WordProcessing(fautes);
-
-        fautes = "abbrévn";
-        corrector.WordProcessing(fautes);
-
-        fautes = "iellet";
-        corrector.WordProcessing(fautes);
-
-        fautes = "maer";
-        corrector.WordProcessing(fautes);
-
-        fautes = "juste";
+        String fautes = "ordinateurss";
         corrector.WordProcessing(fautes);
     }
 }

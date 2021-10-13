@@ -39,6 +39,8 @@ public class Corrector
         Trigram trigrams = new Trigram(providedWord);
         for (String word : this.wordsRef){
             for (String trigram : trigrams.getTrigrams()) {
+
+
                 if (word.contains(trigram)) {
                     result.add(word);
                 }
@@ -95,29 +97,64 @@ public class Corrector
     }
 
     public ArrayList<String> WordProcessing(String providedWord){
+        long startTime = System.nanoTime();
+        long endTime = 0;
+        long totalTime = 0;
+
         ArrayList<String> result = new ArrayList<>();
 
         // Verification d'une faute et recherche de mots par trigrammes
         if (!WordIsCorrect(providedWord)){
 
             result = TrigramsOccurence(providedWord);
+            endTime = System.nanoTime();
+            totalTime = endTime - startTime;
+            System.out.println("step 1 done in " + totalTime/1000000000);
+
+            result = SizeSelection(result, providedWord.length());
+
             result = TrigramsSelection(result);
+            endTime = System.nanoTime();
+            totalTime = endTime - startTime;
+            System.out.println("step 2 done in " + totalTime/1000000000);
+
             result = RemoveDuplicate(result);
+            endTime = System.nanoTime();
+            totalTime = endTime - startTime;
+            System.out.println("step 3 done in " + totalTime/1000000000);
+
             result = LevenshteinOrder(result, providedWord);
+            endTime = System.nanoTime();
+            totalTime = endTime - startTime;
+            System.out.println("step 4 done in " + totalTime/1000000000);
 
             for (int i=5 ; i<result.size() ; i++)
                 result.remove(i);
 
+            for (String word : result){
+                removeBrackets(word);
+            }
 
         }
         else {
             result.clear();
         }
-        for (String word : result){
-            removeBrackets(word);
-        }
 
+
+        endTime = System.nanoTime();
+        totalTime = endTime - startTime;
+        System.out.println("Correction done in " + totalTime/1000000000);
         DebugInfos(providedWord, result);
+        return result;
+    }
+
+    private ArrayList<String> SizeSelection(ArrayList<String> words, int length) {
+        ArrayList<String> result = new ArrayList<>();
+        for (String word : words){
+            if (word.length() + 3 > length || word.length() - 3 < length){
+                result.add(word);
+            }
+        }
         return result;
     }
 
@@ -135,7 +172,7 @@ public class Corrector
     public void DataReader(){
         try {
             for (String word : Files.readAllLines(Paths.get(this.reference))) {
-                this.wordsRef.add(addBrackets(word));
+                this.wordsRef.add(addBrackets(word).toLowerCase(Locale.ROOT));
             }
         } catch (IOException e) {
             e.printStackTrace();
